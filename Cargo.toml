@@ -1,5 +1,5 @@
 [package]
-name = "ccda-editor"
+name = "cdda_editor"
 version = "0.1.0"
 authors = ["Fox Box <foxboxpdx@gmail.com>"]
 edition = "2018"

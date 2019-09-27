@@ -1,7 +1,5 @@
-#[macro_use] extern crate serde_derive;
-extern crate serde;
-extern crate serde_json;
-
+use serde_derive::{Serialize, Deserialize};
+use serde_json::{Value};
 use std::collections::HashMap;
 
 // Define JSON data structure as a struct
@@ -12,7 +10,7 @@ pub struct CDDASave {
     pub initial_season: i32,
     pub auto_travel_mode: bool,
     pub run_mode: i32,
-    pub most_seen: i32,
+    pub mostseen: i32,
     pub levx: i32,
     pub levy: i32,
     pub levz: i32,
@@ -20,7 +18,7 @@ pub struct CDDASave {
     pub om_y: i32,
     pub grscent: String, // This is some space-separated Vec of i32s?
     pub active_monsters: Vec<String>,
-    pub stair_monster: Vec<String>,
+    pub stair_monsters: Vec<String>,
     pub kill_tracker: Kills,
     pub stats_tracker: Stats,
     pub player: Player,
@@ -69,17 +67,17 @@ pub struct DataHash {
 // difficult to represent.  Enums away!
 #[derive(Serialize, Deserialize, Debug)]
 pub struct EventCounts {
-    pub event_counts: Vec<EventEnum>
+    pub event_counts: Vec<Vec<Value>>
 }
 #[derive(Serialize, Deserialize, Debug)]
 pub enum EventEnum {
-    Hsh(Events),
+    Object(StatEvent),
     Number(i32)
 }
 
 // The possible types of events defined in event_counts
 #[derive(Serialize, Deserialize, Debug)]
-pub struct Events {
+pub struct StatEvent {
     pub character: Option<Vec<String>>,
     pub technique: Option<Vec<String>>,
     pub add_type: Option<Vec<String>>,
@@ -144,7 +142,7 @@ pub struct Player {
     pub thirst: i32,
     pub hunger: i32,
     pub fatigue: i32,
-    pub sleep_deprevation: i32,
+    pub sleep_deprivation: i32,
     pub stored_calories: i64,
     pub radiation: i32,
     pub stamina: i64,
@@ -183,8 +181,8 @@ pub struct Player {
     pub worn: Vec<Clothing>,
     pub activity_vehicle_part_index: i32,
     pub inv: Vec<Inventory>,
-    pub weapon: HashMap<String, String>,
-    pub last_target_pos: String,
+    pub weapon: Inventory,
+    pub last_target_pos: Value,
     pub faction_warnings: Vec<String>,
     pub ammo_location: HashMap<String, String>,
     pub camps: Vec<String>,
@@ -205,7 +203,7 @@ pub struct Player {
     pub activity: HashMap<String, String>,
     pub backlog: Vec<String>,
     pub temp_cur: Vec<i32>,
-    pub temp_conf: Vec<i32>,
+    pub temp_conv: Vec<i32>,
     pub frostbite_timer: Vec<i32>,
     pub learned_recipes: Vec<String>,
     pub items_identified: Vec<String>,
@@ -282,13 +280,13 @@ pub struct Trap {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Clothing {
     pub typeid: String,
-    pub bday: i32,
-    pub damaged: i32,
+    pub bday: Option<i32>,
+    pub damaged: Option<i32>,
     pub last_rot_check: i32,
     pub last_temp_check: i32,
-    pub item_tags: Vec<String>,
+    pub item_tags: Option<Vec<String>>,
     pub owner: String,
-    pub relic_data: String
+    pub relic_data: Value
 }
 
 // A struct for player inventory with optional fields.  Can be
@@ -308,7 +306,7 @@ pub struct Inventory {
     pub specific_energy: Option<i64>,
     pub temperature: Option<i64>,
     pub active: Option<bool>,
-    pub relic_data: String
+    pub relic_data: Value
 }
 
 // A struct for player magic
