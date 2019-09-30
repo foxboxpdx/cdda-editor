@@ -1,5 +1,5 @@
 use std::fs::{File};
-use std::io::{BufReader};
+use std::io::{BufReader, BufWriter, Write};
 use cdda_editor::CDDASave;
 
 // This thing's just a POC right now, so stuff is hard coded.
@@ -7,6 +7,7 @@ use cdda_editor::CDDASave;
 
 fn main() {
     let testfile = "test.sav";
+    let outfile = "processed.sav";
 
     let f = match File::open(testfile) {
         Ok(file) => file,
@@ -25,4 +26,31 @@ fn main() {
             return;
         }
     };
+    
+    // Reserialize
+    let ser = match serde_json::to_string(&retval) {
+        Ok(x) => x,
+        Err(e) => {
+            println!("Error serializing to JSON: {}", e);
+            return;
+        }
+    };
+
+    // Dump
+    let ofile = match File::create(&outfile) {
+        Ok(f) => f,
+        Err(e) => {
+            println!("Error creating output file {}: {}", &outfile, e);
+            return;
+        }
+    };
+    
+    let mut ofile_writer = BufWriter::new(ofile);
+    match ofile_writer.write_all(ser.as_bytes()) {
+        Ok(_) => {},
+        Err(e) => {
+            println!("Error writing file {}: {}", &outfile, e);
+            return;
+        }
+    }
 }

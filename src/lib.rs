@@ -17,12 +17,79 @@ pub struct CDDASave {
     pub om_x: i32,
     pub om_y: i32,
     pub grscent: String, // This is some space-separated Vec of i32s?
-    pub active_monsters: Vec<String>,
-    pub stair_monsters: Vec<String>,
+    pub active_monsters: Vec<ActiveMonster>,
+    pub stair_monsters: Vec<ActiveMonster>,
     pub kill_tracker: Kills,
     pub stats_tracker: Stats,
     pub player: Player,
     pub player_messages: PlayerMessages
+}
+
+// A struct for active monster data
+#[derive(Serialize, Deserialize, Debug)]
+pub struct ActiveMonster {
+    pub moves: i32,
+    pub pain: i32,
+    pub effects: HashMap<String, HashMap<String, Effect>>,
+    pub values: HashMap<String, String>,
+    pub blocks_left: i32,
+    pub dodges_left: i32,
+    pub num_blocks_bonus: i32,
+    pub num_dodges_bonus: i32,
+    pub armor_bash_bonus: i32,
+    pub armor_cut_bonus: i32,
+    pub speed: i32,
+    pub speed_bonus: i32,
+    pub dodge_bonus: f32,
+    pub block_bonus: i32,
+    pub hit_bonus: f32,
+    pub bash_bonus: i32,
+    pub cut_bonus: i32,
+    pub bash_mult: f32,
+    pub cut_mult: f32,
+    pub melee_quiet: bool,
+    pub grab_resist: i32,
+    pub throw_resist: i32,
+    pub typeid: String,
+    pub unique_name: String,
+    pub posx: i32,
+    pub posy: i32,
+    pub posz: i32,
+    pub wandx: i32,
+    pub wandy: i32,
+    pub wandz: i32,
+    pub wandf: i32,
+    pub hp: i32,
+    pub special_attacks: Value,
+    pub friendly: i32,
+    pub fish_population: i32,
+    pub faction: String,
+    pub mission_id: i32,
+    pub no_extra_death_drops: bool,
+    pub dead: bool,
+    pub anger: i32,
+    pub morale: i32,
+    pub hallucination: bool,
+    pub stairscount: i32,
+    pub tied_item: Value,
+    pub battery_item: Value,
+    pub destination: Vec<i32>,
+    pub ammo: Value,
+    pub underwater: bool,
+    pub upgrades: bool,
+    pub upgrade_time: i32,
+    pub last_updated: i64,
+    pub reproduces: bool,
+    pub baby_timer: Value,
+    pub last_baby: i64,
+    pub biosignatures: bool,
+    pub biosig_timer: i32,
+    pub last_biosig: i64,
+    pub summon_time_limit: Value,
+    pub inv: Vec<Inventory>,
+    pub dragged_foe_id: i32,
+    pub mounted_player_id: i32,
+    pub path: Vec<Value>
 }
 
 // A struct for the kill tracker data
@@ -42,37 +109,32 @@ pub struct Stats {
 // A struct for the various datapoints of the stat tracker
 #[derive(Serialize, Deserialize, Debug)]
 pub struct DataHash {
-    pub administers_mutagen: EventCounts,
-    pub loses_addiction: EventCounts,
-    pub gains_addiction: EventCounts,
-    pub character_takes_damage: EventCounts,
-    pub triggers_alarm: EventCounts,
-    pub character_loses_effect: EventCounts,
-    pub gains_skill_level: EventCounts,
-    pub seals_hazardous_material_sarcophagus: EventCounts,
-    pub character_gets_headshot: EventCounts,
-    pub evolves_mutation: EventCounts,
-    pub character_gains_effect: EventCounts,
-    pub game_start: EventCounts,
-    pub character_triggers_trap: EventCounts,
-    pub gains_mutation: EventCounts,
-    pub character_heals_damage: EventCounts,
-    pub avatar_moves: EventCounts,
-    pub character_kills_monster: EventCounts,
-    pub throws_up: EventCounts
+    pub administers_mutagen: Option<EventCounts>,
+    pub loses_addiction: Option<EventCounts>,
+    pub gains_addiction: Option<EventCounts>,
+    pub character_takes_damage: Option<EventCounts>,
+    pub triggers_alarm: Option<EventCounts>,
+    pub character_loses_effect: Option<EventCounts>,
+    pub gains_skill_level: Option<EventCounts>,
+    pub seals_hazardous_material_sarcophagus: Option<EventCounts>,
+    pub character_gets_headshot: Option<EventCounts>,
+    pub evolves_mutation: Option<EventCounts>,
+    pub character_gains_effect: Option<EventCounts>,
+    pub game_start: Option<EventCounts>,
+    pub character_triggers_trap: Option<EventCounts>,
+    pub gains_mutation: Option<EventCounts>,
+    pub character_heals_damage: Option<EventCounts>,
+    pub avatar_moves: Option<EventCounts>,
+    pub character_kills_monster: Option<EventCounts>,
+    pub throws_up: Option<EventCounts>,
+    pub installs_cbm: Option<EventCounts>
 }
 
 // EventCounts in the JSON is an array, with each element being
-// an array containing 2 elements: a hash, and an int.  This......is
-// difficult to represent.  Enums away!
+// a StatEvent + i32 tuple
 #[derive(Serialize, Deserialize, Debug)]
 pub struct EventCounts {
-    pub event_counts: Vec<Vec<Value>>
-}
-#[derive(Serialize, Deserialize, Debug)]
-pub enum EventEnum {
-    Object(StatEvent),
-    Number(i32)
+    pub event_counts: Vec<(StatEvent, i32)>
 }
 
 // The possible types of events defined in event_counts
@@ -93,7 +155,8 @@ pub struct StatEvent {
     pub _trait: Option<Vec<String>>,
     pub mount: Option<Vec<String>>,
     pub killer: Option<Vec<String>>,
-    pub victim_type: Option<Vec<String>>
+    pub victim_type: Option<Vec<String>>,
+    pub bionic: Option<Vec<String>>
 }
 
 // A struct for player data
@@ -150,7 +213,7 @@ pub struct Player {
     pub oxygen: i32,
     pub traits: Vec<String>,
     pub mutations: HashMap<String, Mutation>,
-    pub my_bionics: Vec<String>,
+    pub my_bionics: Vec<Bionic>,
     pub skills: HashMap<String, Skill>,
     pub power_level: i32,
     pub max_power_level: i32,
@@ -175,17 +238,17 @@ pub struct Player {
     pub damage_bandaged: Vec<i32>,
     pub damage_disinfected: Vec<i32>,
     pub ma_styles: Vec<String>,
-    pub addictions: Vec<String>,
-    pub followers: Vec<String>,
+    pub addictions: Vec<Value>,
+    pub followers: Vec<Value>,
     pub known_traps: Vec<Trap>,
     pub worn: Vec<Clothing>,
     pub activity_vehicle_part_index: i32,
     pub inv: Vec<Inventory>,
     pub weapon: Inventory,
     pub last_target_pos: Value,
-    pub faction_warnings: Vec<String>,
+    pub faction_warnings: Vec<Value>,
     pub ammo_location: HashMap<String, String>,
-    pub camps: Vec<String>,
+    pub camps: Vec<Value>,
     pub profession: String,
     pub scenario: String,
     pub controlling_vehicle: bool,
@@ -201,7 +264,7 @@ pub struct Player {
     pub int_upgrade: i32,
     pub per_upgrade: i32,
     pub activity: HashMap<String, String>,
-    pub backlog: Vec<String>,
+    pub backlog: Vec<Value>,
     pub temp_cur: Vec<i32>,
     pub temp_conv: Vec<i32>,
     pub frostbite_timer: Vec<i32>,
@@ -210,15 +273,15 @@ pub struct Player {
     pub vitamin_levels: HashMap<String, i32>,
     pub stomach: GutContents,
     pub guts: GutContents,
-    pub translocators: HashMap<String, Vec<String>>,
+    pub translocators: HashMap<String, Vec<Value>>,
     pub morale: Vec<MoraleModifier>,
     pub active_mission: i32,
-    pub active_missions: Vec<String>,
-    pub completed_missions: Vec<String>,
-    pub failed_missions: Vec<String>,
+    pub active_missions: Vec<Value>,
+    pub completed_missions: Vec<Value>,
+    pub failed_missions: Vec<Value>,
     pub show_map_memory: bool,
-    pub assigned_invlet: Vec<String>,
-    pub invcache: Vec<String>
+    pub assigned_invlet: Vec<Value>,
+    pub invcache: Vec<Value>
 }
 
 // A struct for player messages
@@ -274,6 +337,17 @@ pub struct Trap {
     pub y: i32,
     pub z: i32,
     pub trap: String
+}
+
+// A struct for player bionics
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Bionic {
+    pub id: String,
+    pub invlet: i32,
+    pub powered: bool,
+    pub charge: i32,
+    pub ammo_loaded: String,
+    pub ammo_count: i32
 }
 
 // A struct for player clothing
@@ -333,6 +407,7 @@ pub struct GutContents {
 pub struct MoraleModifier {
     #[serde(rename = "type")]
     pub _type: String,
+    pub item_type: Option<String>,
     pub bonus: i32,
     pub duration: i32,
     pub decay_start: i32,
