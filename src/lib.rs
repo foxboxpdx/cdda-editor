@@ -1,6 +1,35 @@
 use serde_derive::{Serialize, Deserialize};
+use std::fs::{File};
+use std::io::{BufReader, BufRead, Error};
 use serde_json::{Value};
 use std::collections::HashMap;
+
+pub mod azul;
+
+// Initialize a CDDASave struct from a file
+impl CDDASave {
+    pub fn from_file(fname: &str) -> Result<CDDASave, Error> {
+        let f = File::open(fname)?;
+        let reader = BufReader::new(f);
+        // Need to skip first line
+        let mut data = String::new();
+        let mut lines_iter = reader.lines();
+        if let Some(_header) = lines_iter.next() { }
+        
+        for line in lines_iter {
+            let l = line?;
+            data.push_str(&l);
+        }
+        let retval: CDDASave = match serde_json::from_str(&data) {
+            Ok(x) => x,
+            Err(e) => {
+                println!("Error parsing savefile JSON: {}", e);
+                return Err(Error::new(std::io::ErrorKind::Other, "oh no!"));
+            }
+        };
+        Ok(retval)
+    }
+}
 
 // Define JSON data structure as a struct
 #[derive(Serialize, Deserialize, Debug)]
@@ -81,10 +110,10 @@ pub struct ActiveMonster {
     pub last_updated: i64,
     pub reproduces: bool,
     pub baby_timer: Value,
-    pub last_baby: i64,
+    pub last_baby: Option<i64>,
     pub biosignatures: bool,
     pub biosig_timer: i32,
-    pub last_biosig: i64,
+    pub last_biosig: Option<i64>,
     pub summon_time_limit: Value,
     pub inv: Vec<Inventory>,
     pub dragged_foe_id: i32,
@@ -244,7 +273,7 @@ pub struct Player {
     pub worn: Vec<Clothing>,
     pub activity_vehicle_part_index: i32,
     pub inv: Vec<Inventory>,
-    pub weapon: Inventory,
+    pub weapon: Option<Inventory>,
     pub last_target_pos: Value,
     pub faction_warnings: Vec<Value>,
     pub ammo_location: HashMap<String, String>,

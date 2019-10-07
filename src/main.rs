@@ -1,32 +1,20 @@
+extern crate azul;
+use azul::{prelude::*, widgets::{label::Label, button::Button}};
 use std::fs::{File};
-use std::io::{BufReader, BufWriter, Write};
+use std::io::{BufWriter, Write};
 use cdda_editor::CDDASave;
 
 // This thing's just a POC right now, so stuff is hard coded.
 // Don't judge me!
+fn main() { 
+    let fname = "test.sav";
+    let mut app = App::new(CDDAApp::new(fname), AppConfig::default()).unwrap();
+    let window = app.create_window(WindowCreateOptions::default(), css::native()).unwrap();
+    app.run(window).unwrap();
+}
 
-fn main() {
-    let testfile = "test.sav";
-    let outfile = "processed.sav";
-
-    let f = match File::open(testfile) {
-        Ok(file) => file,
-        Err(e) => {
-            println!("Error opening file {}: {}", testfile, e);
-            return;
-        }
-    };
-    let reader = BufReader::new(f);
-
-    // Deserialize
-    let retval: CDDASave = match serde_json::from_reader(reader) {
-        Ok(x) => x,
-        Err(e) => {
-            println!("Error parsing savefile JSON: {}", e);
-            return;
-        }
-    };
-    
+fn write(retval: CDDASave, outfile: String) {
+   
     // Reserialize
     let ser = match serde_json::to_string(&retval) {
         Ok(x) => x,
@@ -53,4 +41,35 @@ fn main() {
             return;
         }
     }
+}
+
+// Define a datamodel wrapping a CDDASave
+struct CDDAApp {
+    save: CDDASave,
+}
+
+// Define Layout for the datamodel
+impl Layout for CDDAApp {
+    fn layout(&self, _info: LayoutInfo<Self>) -> Dom<Self> {
+        let label = Label::new("Test").dom();
+        let button = Button::with_label("HONK HONK").dom()
+            .with_callback(On::MouseUp, toot);
+        let muts = self.save.player.mutations.iter().map(|(k,v)|
+            Label::new(format!("{} - {}", k, v.key)).dom()).collect();
+        Dom::div().with_child(label).with_child(button).with_child(muts)
+    }
+}
+
+impl CDDAApp {
+    fn new(fname: &str) -> CDDAApp {
+        let save = match CDDASave::from_file(fname) {
+            Ok(x) => x,
+            Err(_y) => { panic!("Unable to load sav file") }
+        };
+        CDDAApp { save: save }
+    }
+}
+
+fn toot(_event: CallbackInfo<CDDAApp>) -> UpdateScreen {
+    Redraw
 }
