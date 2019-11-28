@@ -1,6 +1,6 @@
 use serde_derive::{Serialize, Deserialize};
 use std::fs::{File};
-use std::io::{BufReader, BufRead, Error};
+use std::io::{BufReader, BufRead, Error, BufWriter, Write};
 use serde_json::{Value};
 use std::collections::HashMap;
 
@@ -29,10 +29,40 @@ impl CDDASave {
         };
         Ok(retval)
     }
+    
+    pub fn write(&self, outfile: String) {
+   
+        // Reserialize
+        let ser = match serde_json::to_string(&self) {
+            Ok(x) => x,
+            Err(e) => {
+                println!("Error serializing to JSON: {}", e);
+                return;
+            }
+        };
+
+        // Dump
+        let ofile = match File::create(&outfile) {
+            Ok(f) => f,
+            Err(e) => {
+                println!("Error creating output file {}: {}", &outfile, e);
+                return;
+            }
+        };
+    
+        let mut ofile_writer = BufWriter::new(ofile);
+        match ofile_writer.write_all(ser.as_bytes()) {
+            Ok(_) => {},
+            Err(e) => {
+                println!("Error writing file {}: {}", &outfile, e);
+                return;
+            }
+        }
+    }
 }
 
 // Define JSON data structure as a struct
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct CDDASave {
     pub turn: i64,
     pub calendar_start: i64,
@@ -55,7 +85,7 @@ pub struct CDDASave {
 }
 
 // A struct for active monster data
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct ActiveMonster {
     pub moves: i32,
     pub pain: i32,
@@ -122,21 +152,21 @@ pub struct ActiveMonster {
 }
 
 // A struct for the kill tracker data
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct Kills {
     pub kills: HashMap<String, i32>,
     pub npc_kills: Vec<String>
 }
 
 // A struct for the stat tracker data
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct Stats {
     pub data: DataHash,
     pub initial_scores: Vec<String>
 }
 
 // A struct for the various datapoints of the stat tracker
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct DataHash {
     pub administers_mutagen: Option<EventCounts>,
     pub loses_addiction: Option<EventCounts>,
@@ -161,13 +191,13 @@ pub struct DataHash {
 
 // EventCounts in the JSON is an array, with each element being
 // a StatEvent + i32 tuple
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct EventCounts {
     pub event_counts: Vec<(StatEvent, i32)>
 }
 
 // The possible types of events defined in event_counts
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct StatEvent {
     pub character: Option<Vec<String>>,
     pub technique: Option<Vec<String>>,
@@ -189,7 +219,7 @@ pub struct StatEvent {
 }
 
 // A struct for player data
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct Player {
     pub moves: i32,
     pub pain: i32,
@@ -314,14 +344,14 @@ pub struct Player {
 }
 
 // A struct for player messages
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct PlayerMessages {
     pub messages: Vec<Msg>,
     pub curmes: i64
 }
 
 // A struct for messages themselves
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct Msg {
     pub turn: i64,
     pub message: String,
@@ -331,7 +361,7 @@ pub struct Msg {
 }
 
 // A struct for the player effects
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct Effect {
     pub eff_type: String,
     pub duration: i32,
@@ -342,7 +372,7 @@ pub struct Effect {
 }
 
 // A struct for player mutations
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct Mutation {
     pub key: i32,
     pub charge: i32,
@@ -350,7 +380,7 @@ pub struct Mutation {
 }
 
 // A struct for player skills
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct Skill {
     pub level: i32,
     pub exercise: i32,
@@ -360,7 +390,7 @@ pub struct Skill {
 }
 
 // A struct for known traps
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct Trap {
     pub x: i32,
     pub y: i32,
@@ -369,7 +399,7 @@ pub struct Trap {
 }
 
 // A struct for player bionics
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct Bionic {
     pub id: String,
     pub invlet: i32,
@@ -380,7 +410,7 @@ pub struct Bionic {
 }
 
 // A struct for player clothing
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct Clothing {
     pub typeid: String,
     pub bday: Option<i32>,
@@ -394,7 +424,7 @@ pub struct Clothing {
 
 // A struct for player inventory with optional fields.  Can be
 // recursive, hope Rust is okay with that...
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct Inventory {
     pub typeid: String,
     pub charges: Option<i32>,
@@ -413,14 +443,14 @@ pub struct Inventory {
 }
 
 // A struct for player magic
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct Magic {
     mana: i32,
     spellbook: Vec<String>
 }
 
 // A struct for stomach/guts
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct GutContents {
     vitamins: HashMap<String, i32>,
     vitamins_absorbed: HashMap<String, i32>,
@@ -432,7 +462,7 @@ pub struct GutContents {
 }
 
 // A struct for player morale
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct MoraleModifier {
     #[serde(rename = "type")]
     pub _type: String,

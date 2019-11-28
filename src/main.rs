@@ -1,75 +1,68 @@
-extern crate azul;
-use azul::{prelude::*, widgets::{label::Label, button::Button}};
-use std::fs::{File};
-use std::io::{BufWriter, Write};
+// Gui components
+use iced::{button, Application, Button, Column, Command, Element, Settings, Text};
+
+// And of course the CDDA stuff itself
 use cdda_editor::CDDASave;
 
 // This thing's just a POC right now, so stuff is hard coded.
 // Don't judge me!
 fn main() { 
-    let fname = "test.sav";
-    let mut app = App::new(CDDAApp::new(fname), AppConfig::default()).unwrap();
-    let window = app.create_window(WindowCreateOptions::default(), css::native()).unwrap();
-    app.run(window).unwrap();
+    CDDAEditor::run(Settings::default())
 }
 
-fn write(retval: CDDASave, outfile: String) {
-   
-    // Reserialize
-    let ser = match serde_json::to_string(&retval) {
-        Ok(x) => x,
-        Err(e) => {
-            println!("Error serializing to JSON: {}", e);
-            return;
-        }
-    };
+// A Struct to implement Application on that holds the GUI state
+#[derive(Default)]
+struct CDDAEditor {
+    savefile: CDDASave,
+    loaded: bool,
+    some_state: String,
+    a_button: button::State,
+}
 
-    // Dump
-    let ofile = match File::create(&outfile) {
-        Ok(f) => f,
-        Err(e) => {
-            println!("Error creating output file {}: {}", &outfile, e);
-            return;
-        }
-    };
+// An enum defining messages that can be passed from widgets
+#[derive(Debug, Clone, Copy)]
+enum Message {
+    Pressed,
+}
+
+// Impl the Application trait
+impl Application for CDDAEditor {
+    type Message = Message;
     
-    let mut ofile_writer = BufWriter::new(ofile);
-    match ofile_writer.write_all(ser.as_bytes()) {
-        Ok(_) => {},
-        Err(e) => {
-            println!("Error writing file {}: {}", &outfile, e);
-            return;
+    fn new() -> (Self, Command<Message>) {
+        (Self::default(), Command::none())
+    }
+    
+    fn title(&self) -> String {
+        String::from("CDDA Save File Editor")
+    }
+    
+    fn update(&mut self, message: Message) -> Command<Message> {
+        match message {
+            Message::Pressed => {
+                if self.loaded == true { return Command::none(); }
+                let loaded = match CDDASave::from_file("test.sav") {
+                    Ok(x) => x,
+                    Err(_e) => { panic!("Error loading save"); }
+                };
+                self.savefile = loaded;
+                self.loaded = true;
+                self.some_state = "Save Loaded".to_string();
+            }
         }
+        
+        Command::none()
     }
-}
-
-// Define a datamodel wrapping a CDDASave
-struct CDDAApp {
-    save: CDDASave,
-}
-
-// Define Layout for the datamodel
-impl Layout for CDDAApp {
-    fn layout(&self, _info: LayoutInfo<Self>) -> Dom<Self> {
-        let label = Label::new("Test").dom();
-        let button = Button::with_label("HONK HONK").dom()
-            .with_callback(On::MouseUp, toot);
-        let muts = self.save.player.mutations.iter().map(|(k,v)|
-            Label::new(format!("{} - {}", k, v.key)).dom()).collect();
-        Dom::div().with_child(label).with_child(button).with_child(muts)
+    
+    fn view(&mut self) -> Element<Message> {
+        Column::new()
+            .push(
+                Button::new(&mut self.a_button, Text::new("Load Save File"))
+                    .on_press(Message::Pressed),
+            )
+            .push(
+                Text::new(self.some_state.to_string()).size(50),
+            )
+            .into()
     }
-}
-
-impl CDDAApp {
-    fn new(fname: &str) -> CDDAApp {
-        let save = match CDDASave::from_file(fname) {
-            Ok(x) => x,
-            Err(_y) => { panic!("Unable to load sav file") }
-        };
-        CDDAApp { save: save }
-    }
-}
-
-fn toot(_event: CallbackInfo<CDDAApp>) -> UpdateScreen {
-    Redraw
 }
