@@ -91,7 +91,7 @@ pub struct Player {
     pub pain: i32,
     pub effects: Value, // Simplify for now!
     pub damage_over_time_map: Value, // Need further research
-    pub values: HashMap<String, String>, // I hope this is all it is ugh
+    pub values: HashMap<String, String>, // like, moral values I guess?
     pub blocks_left: i32,
     pub dodges_left: i32,
     pub num_blocks_bonus: i32,
