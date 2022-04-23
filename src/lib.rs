@@ -76,7 +76,7 @@ pub struct CDDASave {
     pub om_y: i32,
     pub grscent: String, // This is some space-separated Vec of i32s?
     pub typescent: String,
-    pub active_monsters: Value, // Simplify these four into just generic Value types
+    pub active_monsters: Vec<Value>, // Simplify these four into just generic Value types
     pub stair_monsters: Value,  // as there is no reason to be parsing and manipulating them
     pub kill_tracker: Value,    // at least for initial versions
     pub stats_tracker: Value,   // Especially since stats has some horrendous Vec<Vec<HashMap>> data structure
